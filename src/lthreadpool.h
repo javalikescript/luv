@@ -38,6 +38,7 @@ typedef struct {
       size_t size;
       const char* metaname;
     } udata;
+    const void* ludata;
   } val;
   int ref[2];          // ref of string or userdata
 } luv_val_t;

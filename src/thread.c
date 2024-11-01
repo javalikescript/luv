@@ -102,10 +102,11 @@ static int luv_thread_arg_set(lua_State* L, luv_thread_arg_t* args, int idx, int
       arg->val.udata.size = lua_rawlen(L, i);
       arg->val.udata.metaname = luv_getmtname(L, i);
 
-      if (arg->val.udata.size) {
-        lua_pushvalue(L, i);
-        arg->ref[side] = luaL_ref(L, LUA_REGISTRYINDEX);
-      }
+      lua_pushvalue(L, i);
+      arg->ref[side] = luaL_ref(L, LUA_REGISTRYINDEX);
+      break;
+    case LUA_TLIGHTUSERDATA:
+      arg->val.ludata = lua_topointer(L, i);
       break;
     default:
       args->argc = i - idx;
@@ -187,20 +188,20 @@ static int luv_thread_arg_push(lua_State* L, luv_thread_arg_t* args, int flags) 
       lua_pushlstring(L, arg->val.str.base, arg->val.str.len);
       break;
     case LUA_TUSERDATA:
-      if (arg->val.udata.size)
-      {
-        char *p = lua_newuserdata(L, arg->val.udata.size);
+      char *p = lua_newuserdata(L, arg->val.udata.size);
+      if (arg->val.udata.size > 0) {
         memcpy(p, arg->val.udata.data, arg->val.udata.size);
-        if (arg->val.udata.metaname)
-        {
-          luaL_getmetatable(L, arg->val.udata.metaname);
-          lua_setmetatable(L, -2);
-        }
-        lua_pushvalue(L, -1);
-        arg->ref[side] = luaL_ref(L, LUA_REGISTRYINDEX);
-      }else{
-        lua_pushlightuserdata(L, (void*)arg->val.udata.data);
       }
+      if (arg->val.udata.metaname)
+      {
+        luaL_getmetatable(L, arg->val.udata.metaname);
+        lua_setmetatable(L, -2);
+      }
+      lua_pushvalue(L, -1);
+      arg->ref[side] = luaL_ref(L, LUA_REGISTRYINDEX);
+      break;
+    case LUA_TLIGHTUSERDATA:
+      lua_pushlightuserdata(L, (void*)arg->val.ludata);
       break;
     default:
       fprintf(stderr, "Error: thread arg not support type %s at %d",
