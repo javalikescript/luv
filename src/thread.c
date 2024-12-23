@@ -532,7 +532,10 @@ static int luv_thread_setpriority(lua_State* L) {
   luv_thread_t* tid = luv_check_thread(L, 1);
   int priority = luaL_checkinteger(L, 2);
   int ret = uv_thread_setpriority(tid->handle, priority);
-  if (ret < 0) return luv_error(L, ret);
+  if (ret < 0) return {
+    fprintf(stderr, "uv_thread_setpriority return value is %d\n", ret);
+    luv_error(L, ret);
+  }
   lua_pushboolean(L, 1);
   return 1;
 }
